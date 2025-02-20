@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  userId        String   @id @default(uuid())
+  name          String
+  email         String
+  emailVerified  Boolean  @default(false)
+  password      String
+  mobileNo      String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt()
+
+  refreshToken          RefreshToken[]
+  emailVerificationToken EmailVerificationToken?
+  address               Address?
+
+  @@index([email])
+  @@unique([mobileNo])
+}
+
+model EmailVerificationToken {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  token         String  
+  expiresAt     DateTime
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt()
+  user          User  @relation(fields: [userId], references: [userId],onDelete: Cascade)
+
+  @@unique([userId,token])
+}
+
+model RefreshToken {
+  id            String   @id @default(uuid())
+  userId        String
+  token         String  @unique
+  expiresAt     DateTime
+  createdAt     DateTime  @default(now())
+
+  user          User  @relation(fields: [userId], references: [userId],onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Address {
+  addressId       String   @id @default(uuid())
+  userId          String   @unique
+  line1           String
+  line2           String?
+  city            String
+  state           String
+  zipCode         String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt()
+  user            User      @relation(fields: [userId], references: [userId],onDelete: Cascade)
+
+  @@index([addressId,userId])
+}
+
+
+
+
