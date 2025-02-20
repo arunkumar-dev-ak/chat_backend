@@ -35,8 +35,4 @@ export class AuthService {
       });
     }
   }
-
-  async getUserById() {}
-
-  async getUserByEmail() {}
 }
