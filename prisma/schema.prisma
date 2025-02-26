@@ -28,6 +28,7 @@ model User {
   address               Address?
 
   @@index([email])
+  @@unique([email])
   @@unique([mobileNo])
 }
 
@@ -47,6 +48,7 @@ model RefreshToken {
   id            String   @id @default(uuid())
   userId        String
   token         String  @unique
+  userAgent     String?
   expiresAt     DateTime
   createdAt     DateTime  @default(now())
 

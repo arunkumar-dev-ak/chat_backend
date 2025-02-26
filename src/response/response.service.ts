@@ -31,20 +31,18 @@ export class ResponseService {
     res,
     message,
     statusCode = 400,
-    initialDate,
+    errors,
   }: {
     res: Response;
-    message: string;
+    message: unknown;
     statusCode: number;
-    initialDate: Date;
+    errors?: unknown;
   }): unknown {
-    const processSeconds =
-      (new Date().getTime() - initialDate.getTime()) / 1000;
     return res.status(statusCode).json({
       status: false,
       message: message,
       statusCode: statusCode,
-      processingTime: processSeconds,
+      errors,
     });
   }
 }
