@@ -17,15 +17,20 @@ model User {
   userId        String   @id @default(uuid())
   name          String
   email         String
-  emailVerified  Boolean  @default(false)
+  emailVerified  Boolean   @default(false)
   password      String
   mobileNo      String
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt()
+  status        String   @default("ACTIVE")
 
   refreshToken          RefreshToken[]
   emailVerificationToken EmailVerificationToken?
   address               Address?
+  contact               Contact[]       @relation(name: "UserContact")
+  addedBy               Contact[]       @relation(name: "UserAsContact")
+  user1                 Conversation[]  @relation(name: "User1Contact")
+  user2                 Conversation[]  @relation(name: "User2Contact")
 
   @@index([email])
   @@unique([email])
@@ -70,6 +75,63 @@ model Address {
   user            User      @relation(fields: [userId], references: [userId],onDelete: Cascade)
 
   @@index([addressId,userId])
+}
+
+model Contact {
+  id              String  @id @default(uuid())
+  userId          String
+  contactId       String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt()
+
+  user            User @relation(fields: [userId], references: [userId], name: "UserContact")
+  contact         User @relation(fields: [contactId], references: [userId], name: "UserAsContact")
+
+  @@unique([userId, contactId])
+}
+
+model Conversation {
+  id              String  @id @default(uuid())
+  user1Id         String
+  user2Id         String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt()
+  message         Message[]
+
+  user1           User  @relation(fields: [user1Id], references: [userId], name:"User1Contact")
+  user2           User  @relation(fields: [user2Id], references: [userId], name:"User2Contact")
+
+  @@index([user1Id, user2Id])
+  @@unique([user1Id, user2Id])
+}
+
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+}
+
+model Message {
+  id                String  @id @default(uuid())
+  senderId          String
+  receiverId        String
+  conversationId    String
+  type              MessageType @default(TEXT)
+  isSent            Boolean
+  isViewed          Boolean
+  content           String
+  mediaUrl          String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt()
+
+  conversation      Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, receiverId])
+  @@index([senderId, receiverId, isSent])
+  @@index([senderId, receiverId, isViewed])
+  @@index([conversationId])
 }
 
 
