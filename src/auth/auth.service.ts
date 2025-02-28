@@ -165,9 +165,4 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { mobileNo } });
     return !!user;
   }
-
-  async getUserById({ userId }: { userId: string }) {
-    const user = await this.prisma.user.findUnique({ where: { userId } });
-    return user;
-  }
 }

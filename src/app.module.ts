@@ -1,4 +1,3 @@
-import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -12,10 +11,21 @@ import { JwtService } from '@nestjs/jwt';
 import { ChatController } from './chat/chat.controller';
 import { ChatService } from './chat/chat.service';
 import { ChatModule } from './chat/chat.module';
+import { UserController } from './user/user.controller';
+import { UserService } from './user/user.service';
+import { UserModule } from './user/user.module';
+import { Module } from '@nestjs/common';
 
 @Module({
-  imports: [AuthModule, PrismaModule, ResponseModule, TokenModule, ChatModule],
-  controllers: [AppController, ChatController],
+  imports: [
+    AuthModule,
+    PrismaModule,
+    ResponseModule,
+    TokenModule,
+    ChatModule,
+    UserModule,
+  ],
+  controllers: [AppController, ChatController, UserController],
   providers: [
     AppService,
     PrismaService,
@@ -23,6 +33,7 @@ import { ChatModule } from './chat/chat.module';
     TokenService,
     JwtService,
     ChatService,
+    UserService,
   ],
 })
 export class AppModule {}
