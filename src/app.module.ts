@@ -15,7 +15,11 @@ import { UserController } from './user/user.controller';
 import { UserService } from './user/user.service';
 import { UserModule } from './user/user.module';
 import { Module } from '@nestjs/common';
-
+import { ChatsseController } from './chatsse/chatsse.controller';
+import { ChatsseService } from './chatsse/chatsse.service';
+import { ChatsseModule } from './chatsse/chatsse.module';
+import { ConversationModule } from './conversation/conversation.module';
+import { ConversationwebsocketModule } from './conversationwebsocket/conversationwebsocket.module';
 @Module({
   imports: [
     AuthModule,
@@ -24,8 +28,16 @@ import { Module } from '@nestjs/common';
     TokenModule,
     ChatModule,
     UserModule,
+    ChatsseModule,
+    ConversationModule,
+    ConversationwebsocketModule,
   ],
-  controllers: [AppController, ChatController, UserController],
+  controllers: [
+    AppController,
+    ChatController,
+    UserController,
+    ChatsseController,
+  ],
   providers: [
     AppService,
     PrismaService,
@@ -34,6 +46,8 @@ import { Module } from '@nestjs/common';
     JwtService,
     ChatService,
     UserService,
+    ChatsseService,
   ],
+  exports: [JwtService],
 })
 export class AppModule {}

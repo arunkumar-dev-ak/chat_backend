@@ -98,6 +98,7 @@ model Conversation {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt()
   message         Message[]
+  metadata        ConversationMetaData?
 
   user1           User  @relation(fields: [user1Id], references: [userId], name:"User1Contact")
   user2           User  @relation(fields: [user2Id], references: [userId], name:"User2Contact")
@@ -106,6 +107,17 @@ model Conversation {
   @@unique([user1Id, user2Id])
 }
 
+model ConversationMetaData {
+  conversationId     String  @id
+  lastMessageId      String
+  lastMessageCreatedAt DateTime @default(now())
+  updatedAt            DateTime @updatedAt()
+
+  conversation       Conversation? @relation(fields: [conversationId], references: [id])
+
+  @@index([conversationId])
+  @@index([lastMessageId])
+}
 
 enum MessageType {
   TEXT
@@ -120,10 +132,10 @@ model Message {
   receiverId        String
   conversationId    String
   type              MessageType @default(TEXT)
-  isSent            Boolean
-  isViewed          Boolean
-  content           String
-  mediaUrl          String
+  isSent            Boolean @default(false)
+  isViewed          Boolean @default(false)
+  content           String?
+  mediaUrl          String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt()
 

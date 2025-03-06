@@ -147,4 +147,18 @@ export class ChatService {
       initialDate,
     });
   }
+
+  async getAllConversation({ res, userId }: { res: Response; userId: string }) {
+    const initialDate = new Date();
+    const conversationList = await this.prisma
+      .$queryRaw`SELECT c.id as conversationId,c.user1Id,c.user2Id,cm.lastMessageId,cm.lastMessageCreatedAt,m.* FROM Conversation c JOIN ConversationMetaData cm ON c.id = cm.conversationId JOIN Message m ON cm.lastMessageId = m.id WHERE c.user1Id = ${userId} OR c.user2Id = ${userId} ORDER BY cm.lastMessageCreatedAt DESC`;
+
+    return this.response.successResponse({
+      res,
+      statusCode: 200,
+      message: 'Conversation fetched successfully',
+      data: conversationList,
+      initialDate,
+    });
+  }
 }
