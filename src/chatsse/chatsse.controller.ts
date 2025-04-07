@@ -22,7 +22,6 @@ export class ChatsseController {
   sendEvents(@Req() req: AuthenticatedRequest): Observable<MessageEventType> {
     const userId: string = req.user;
     const stream = this.chatService.subscribeToUser({ userId });
-
     req.on('close', () => {
       this.chatService.unsubscribeUser(userId);
     });

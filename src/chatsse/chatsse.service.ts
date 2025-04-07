@@ -8,6 +8,8 @@ interface MessageEventType {
 
 @Injectable()
 export class ChatsseService {
+  constructor() {}
+
   private readonly clients = new Map<string, Subject<MessageEventType>>();
 
   /*
@@ -21,9 +23,12 @@ export class ChatsseService {
   }: {
     userId: string;
   }): Observable<MessageEventType> {
+    // console.log(this.clients);
     if (!this.clients.get(userId)) {
       this.clients.set(userId, new Subject<MessageEventType>());
     }
+    // console.log(userId);
+    // console.log(this.clients.get(userId)!.asObservable());
     return this.clients.get(userId)!.asObservable();
   }
 

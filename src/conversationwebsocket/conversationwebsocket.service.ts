@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { MessageDto } from './dto/message.dto';
 import { ResponseService } from 'src/response/response.service';
 
 interface SaveMessageDto {
   senderId: string;
-  body: MessageDto;
+  receiverId: string;
+  content: string;
 }
 
 @Injectable()
@@ -15,8 +15,7 @@ export class ConversationwebsocketService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async saveMessage({ senderId, body }: SaveMessageDto) {
-    const { receiverId, content } = body;
+  async saveMessage({ senderId, receiverId, content }: SaveMessageDto) {
     const initialDate = new Date();
     //1.check if senderId and receiverId are not same
     //2.check if senderId is valid

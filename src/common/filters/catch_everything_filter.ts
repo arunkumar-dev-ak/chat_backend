@@ -15,6 +15,7 @@ import {
 } from '@prisma/client/runtime/library';
 import { ResponseService } from 'src/response/response.service';
 import { Response } from 'express';
+import { WsException } from '@nestjs/websockets';
 
 // type BadRequestResponse =
 //   | {
@@ -32,6 +33,7 @@ export class CatchEverythingFilter implements ExceptionFilter {
   constructor(private readonly responseService: ResponseService) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
+    console.log(exception);
     const ctx = host.switchToHttp();
     const res = ctx.getResponse<Response>();
 
@@ -67,6 +69,8 @@ export class CatchEverythingFilter implements ExceptionFilter {
     } else if (exception instanceof UnauthorizedException) {
       statusCode = HttpStatus.UNAUTHORIZED;
       message = exception.message || 'An error occurred';
+    } else if (exception instanceof WsException) {
+      console.log(exception);
     } else if (exception instanceof Error) {
       statusCode = HttpStatus.BAD_REQUEST;
       message = exception.message || 'An error occurred';

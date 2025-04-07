@@ -14,6 +14,9 @@ export class AuthService {
     private readonly response: ResponseService,
     private readonly tokenService: TokenService,
   ) {}
+
+  private array: string[] = [];
+
   /*----- signup -----*/
   async registerUser({
     req,
@@ -76,6 +79,9 @@ export class AuthService {
     res: Response;
   }) {
     const currentDate = new Date();
+    // console.log(`before push array is ${this.array}`);
+    this.array.push(credentials.email);
+    // console.log(`after push array is ${this.array}`);
 
     const existingUser = await this.getUserByEmail({
       email: credentials.email,

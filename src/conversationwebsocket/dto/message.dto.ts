@@ -6,10 +6,6 @@ export class MessageDto {
   receiverId: string;
 
   @IsString()
-  @IsNotEmpty({ message: 'Type is required' })
-  type: string;
-
-  @IsString()
   @IsNotEmpty({ message: 'Content type is required' })
   content: string;
 }
