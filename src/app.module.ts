@@ -13,6 +13,7 @@ import { ConversationModule } from './conversation/conversation.module';
 import { ConversationwebsocketModule } from './conversationwebsocket/conversationwebsocket.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { RedisOptions } from './configs/app-options-constants';
+import { RedisModule } from './redis/redis.module';
 @Module({
   imports: [
     CacheModule.register({
@@ -28,6 +29,7 @@ import { RedisOptions } from './configs/app-options-constants';
     ChatsseModule,
     ConversationModule,
     ConversationwebsocketModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtService],

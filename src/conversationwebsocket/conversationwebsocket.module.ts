@@ -3,9 +3,10 @@ import { ConversationwebsocketService } from './conversationwebsocket.service';
 import { ConversationwebsocketGateway } from './conversationwebsocket.gateway';
 import { JwtService } from '@nestjs/jwt';
 import { ChatsseModule } from 'src/chatsse/chatsse.module';
+import { RedisModule } from 'src/redis/redis.module';
 
 @Module({
-  imports: [ChatsseModule],
+  imports: [ChatsseModule, RedisModule],
   providers: [
     ConversationwebsocketService,
     ConversationwebsocketGateway,

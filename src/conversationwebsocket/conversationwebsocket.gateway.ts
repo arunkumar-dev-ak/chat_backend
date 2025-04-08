@@ -14,6 +14,7 @@ import { UseGuards } from '@nestjs/common';
 import { SocketGuard } from 'src/common/guards/socket.guard';
 import { SocketMiddleware } from 'src/common/middleware/socket.middleware';
 import { ChatsseService } from 'src/chatsse/chatsse.service';
+import { RedisService } from 'src/redis/redis.service';
 
 interface SocketRequest extends Socket {
   user?: string;
@@ -25,6 +26,7 @@ export class ConversationwebsocketGateway implements OnGatewayInit<Server> {
   constructor(
     private readonly webSocketService: ConversationwebsocketService,
     private readonly chatSseService: ChatsseService,
+    private readonly redisService: RedisService,
   ) {}
 
   @WebSocketServer()
@@ -36,11 +38,32 @@ export class ConversationwebsocketGateway implements OnGatewayInit<Server> {
   }
 
   handleConnection(client: Socket) {
+    console.log(client.id);
     client.emit('room', client.id + ' joined');
   }
 
   handleDisconnection(client: Socket) {
     client.emit('room', client.id + ' left!');
+  }
+
+  @SubscribeMessage('joinRoom')
+  async handleJoinRoom(
+    @MessageBody() data: { receiverId: string },
+    @ConnectedSocket() client: SocketRequest,
+  ) {
+    const senderId = client.user;
+    if (!senderId) {
+      client.emit('error', 'Unauthorized');
+      return;
+    }
+
+    const room =
+      senderId < data.receiverId
+        ? `chat-${senderId}-${data.receiverId}`
+        : `chat-${data.receiverId}-${senderId}`;
+    client.emit('joinedRoom', `User ${senderId} joined room ${room}`);
+    await client.join(room);
+    console.log(`User ${senderId} joined room ${room}`);
   }
 
   @SubscribeMessage('sendMessage')
@@ -49,42 +72,49 @@ export class ConversationwebsocketGateway implements OnGatewayInit<Server> {
     @ConnectedSocket() client: SocketRequest,
   ) {
     try {
-      const userId: string | undefined = client.user;
-      if (!userId) {
-        return client.emit('error', 'Unauthorized');
-      }
-      if (!body.content) {
-        throw new WsException('Content is required');
-      }
-      if (!body.receiverId) {
-        throw new WsException('Receiver Id is required');
-      }
+      const senderId: string | undefined = client.user;
+      const { receiverId, content } = body;
+
+      if (!senderId) throw new WsException('Unauthorized');
+      if (!content) throw new WsException('Content is required');
+      if (!receiverId) throw new WsException('Receiver ID is required');
+
+      const room =
+        senderId < receiverId
+          ? `chat-${senderId}-${receiverId}`
+          : `chat-${receiverId}-${senderId}`;
+
+      // Ensure client is in the room
+      await client.join(room);
+
+      //get sockets from room
+      const socketsInRoom = await this.server.in('room-id').fetchSockets();
+      console.log(socketsInRoom);
 
       const savedMessage = await this.webSocketService.saveMessage({
-        senderId: userId,
-        receiverId: body.receiverId,
-        content: body.content,
+        senderId,
+        receiverId,
+        content,
       });
+
+      // Send ack to sender
       client.emit('messageSent', savedMessage);
-      const { receiverId } = body;
-      //send last message in events if online
-      if (this.chatSseService.isUserSubscribed({ userId: receiverId })) {
-        this.chatSseService.sendEventToUser({
-          userId: receiverId,
+
+      // Emit via WebSocket if receiver is in room
+      this.server.to(room).emit('newMessage', savedMessage);
+
+      // Fallback: Notify receiver's contact list using SSE
+      const channel = `sse-user-${receiverId}`;
+      await this.redisService.publish(
+        channel,
+        JSON.stringify({
           event: 'newMessage',
           data: savedMessage,
-        });
-      } else {
-        console.log(`User ${receiverId} is offline. Skipping SSE update.`);
-      }
-
-      // Emit message in WebSocket if receiver is actively chatting
-      client.to(`${userId}-${receiverId}`).emit('newMessage', savedMessage);
+        }),
+      );
     } catch (err: any) {
-      if (err instanceof WsException) {
-        throw err;
-      }
-      throw new WsException(`Unable to connect to client ${err}`);
+      if (err instanceof WsException) throw err;
+      throw new WsException(`Unable to send message: ${err}`);
     }
   }
 }

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Observable, Subject } from 'rxjs';
+import { RedisService } from 'src/redis/redis.service';
 
 interface MessageEventType {
   type: string;
@@ -8,7 +9,7 @@ interface MessageEventType {
 
 @Injectable()
 export class ChatsseService {
-  constructor() {}
+  constructor(private readonly redisService: RedisService) {}
 
   private readonly clients = new Map<string, Subject<MessageEventType>>();
 
@@ -60,5 +61,12 @@ export class ChatsseService {
 
   isUserSubscribed({ userId }: { userId: string }): boolean {
     return this.clients.has(userId);
+  }
+
+  async sendEventToUserByRedis(userId: string, event: string, data: unknown) {
+    const channel = `sse-user-${userId}`;
+    const message = JSON.stringify({ event, data });
+
+    await this.redisService.publish(channel, message);
   }
 }
