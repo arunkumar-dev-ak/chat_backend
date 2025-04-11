@@ -42,7 +42,16 @@ export class ConversationwebsocketGateway implements OnGatewayInit<Server> {
     client.emit('room', client.id + ' joined');
   }
 
-  handleDisconnection(client: Socket) {
+  async handleDisconnection(client: Socket) {
+    const socketId = client.id;
+    const userId = await this.redisService.hget(
+      `socketMeta:${socketId}`,
+      'userId',
+    );
+    if (userId) {
+      await this.redisService.srem(`userSockets:${userId}`, socketId);
+    }
+    await this.redisService.rem(`socketMeta:${socketId}`);
     client.emit('room', client.id + ' left!');
   }
 
@@ -62,6 +71,13 @@ export class ConversationwebsocketGateway implements OnGatewayInit<Server> {
         ? `chat-${senderId}-${data.receiverId}`
         : `chat-${data.receiverId}-${senderId}`;
     client.emit('joinedRoom', `User ${senderId} joined room ${room}`);
+
+    //setting redis for websocket connection
+    await this.redisService.sadd(`userSockets:${client.user}`, client.id);
+    await this.redisService.hset(`socketMeta:${client.id}`, {
+      userId: senderId,
+      chattingWith: data.receiverId,
+    });
     await client.join(room);
     console.log(`User ${senderId} joined room ${room}`);
   }
@@ -88,8 +104,7 @@ export class ConversationwebsocketGateway implements OnGatewayInit<Server> {
       await client.join(room);
 
       //get sockets from room
-      const socketsInRoom = await this.server.in('room-id').fetchSockets();
-      console.log(socketsInRoom);
+      // const socketsInRoom = await this.server.in(room).fetchSockets();
 
       const savedMessage = await this.webSocketService.saveMessage({
         senderId,
@@ -103,15 +118,32 @@ export class ConversationwebsocketGateway implements OnGatewayInit<Server> {
       // Emit via WebSocket if receiver is in room
       this.server.to(room).emit('newMessage', savedMessage);
 
-      // Fallback: Notify receiver's contact list using SSE
-      const channel = `sse-user-${receiverId}`;
-      await this.redisService.publish(
-        channel,
-        JSON.stringify({
-          event: 'newMessage',
-          data: savedMessage,
-        }),
+      //sockets data
+      const socketIds = await this.redisService.smembers(
+        `userSockets:${receiverId}`,
       );
+
+      //pipeline data => used like a Promise
+      const pipeline = this.redisService.getRedisPipeline();
+      socketIds.forEach((sid) => {
+        pipeline.hget(`socketMeta:${sid}`, 'chattingWith');
+      });
+      const results = await pipeline.exec();
+
+      const isChattingWithSender = results?.some(
+        ([_, val]) => val === senderId,
+      );
+      if (!isChattingWithSender) {
+        // Fallback: Notify receiver's contact list using SSE
+        const channel = `sse-user-${receiverId}`;
+        await this.redisService.publish(
+          channel,
+          JSON.stringify({
+            event: 'newMessage',
+            data: savedMessage,
+          }),
+        );
+      }
     } catch (err: any) {
       if (err instanceof WsException) throw err;
       throw new WsException(`Unable to send message: ${err}`);

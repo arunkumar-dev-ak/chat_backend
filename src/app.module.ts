@@ -14,11 +14,14 @@ import { ConversationwebsocketModule } from './conversationwebsocket/conversatio
 import { CacheModule } from '@nestjs/cache-manager';
 import { RedisOptions } from './configs/app-options-constants';
 import { RedisModule } from './redis/redis.module';
+import { ConfigModule } from '@nestjs/config';
+import { FirebaseModule } from './firebase/firebase.module';
 @Module({
   imports: [
-    CacheModule.register({
-      isGlobal: true,
-    }),
+    // CacheModule.register({
+    //   isGlobal: true,
+    // }),
+    ConfigModule.forRoot({ cache: true }),
     CacheModule.registerAsync(RedisOptions),
     AuthModule,
     PrismaModule,
@@ -30,6 +33,7 @@ import { RedisModule } from './redis/redis.module';
     ConversationModule,
     ConversationwebsocketModule,
     RedisModule,
+    FirebaseModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtService],

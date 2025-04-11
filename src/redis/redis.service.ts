@@ -19,6 +19,34 @@ export class RedisService {
     return await this.redisClient.get(key);
   }
 
+  async sadd(key: string, values: string | string[]): Promise<void> {
+    await this.redisClient.sadd(key, ...values);
+  }
+
+  async smembers(key: string): Promise<string[]> {
+    return await this.redisClient.smembers(key);
+  }
+
+  async srem(key: string, field: string) {
+    return await this.redisClient.srem(key, field);
+  }
+
+  async hset(key: string, value: Record<string, string>): Promise<number> {
+    return await this.redisClient.hset(key, value);
+  }
+
+  async hget(key: string, field: string): Promise<string | null> {
+    return await this.redisClient.hget(key, field);
+  }
+
+  async rem(key: string) {
+    return await this.redisClient.del(key);
+  }
+
+  getRedisPipeline() {
+    return this.redisClient.pipeline();
+  }
+
   //publisher publishes the message
   async publish(channel: string, message: string) {
     // console.log('in publisher');
